@@ -1,0 +1,303 @@
+#include <iostream>
+#include <windows.h>
+#include <conio.h>
+#include <string>
+#include <sstream>
+#include <cstdlib>
+#include <cmath>
+#include <iomanip>
+#include <fstream>
+
+using namespace std;
+
+// Funcion para mover el cursor
+void gotoxy(int x, int y)
+{
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+// Funcion para dibujar recuadros
+void recuadro(int Col1, int Col2, int Fil1, int Fil2)
+{
+    for(int Cols = Col1; Cols <= Col2; Cols++)
+    {
+        for(int Fils = Fil1; Fils <= Fil2; Fils++)
+        {
+            gotoxy(Cols, Fils);
+
+            if((Cols == Col1 || Cols == Col2) &&
+               (Fils != Fil1 && Fils != Fil2))
+                cout << (char)186;
+
+            else if((Fils == Fil1 || Fils == Fil2) &&
+                    (Cols != Col1 && Cols != Col2))
+                cout << (char)205;
+        }
+    }
+
+    // Esquinas
+    gotoxy(Col1, Fil1); cout << (char)201;
+    gotoxy(Col1, Fil2); cout << (char)200;
+    gotoxy(Col2, Fil1); cout << (char)187;
+    gotoxy(Col2, Fil2); cout << (char)188;
+}
+
+// Funcion para dibujar la calculadora
+void caratula()
+{
+    recuadro(5, 33, 2, 22);
+
+    // Pantalla
+    recuadro(8, 30, 4, 6);
+
+    gotoxy(10, 3);
+    cout << "     CALCULADORA";
+
+    // Primera fila
+    recuadro(8, 12, 8, 10);
+    gotoxy(10, 9); cout << "7";
+
+    recuadro(14, 18, 8, 10);
+    gotoxy(16, 9); cout << "8";
+
+    recuadro(20, 24, 8, 10);
+    gotoxy(22, 9); cout << "9";
+
+    recuadro(26, 30, 8, 10);
+    gotoxy(28, 9); cout << "/";
+
+    // Segunda fila
+    recuadro(8, 12, 11, 13);
+    gotoxy(10, 12); cout << "4";
+
+    recuadro(14, 18, 11, 13);
+    gotoxy(16, 12); cout << "5";
+
+    recuadro(20, 24, 11, 13);
+    gotoxy(22, 12); cout << "6";
+
+    recuadro(26, 30, 11, 13);
+    gotoxy(28, 12); cout << "*";
+
+    // Tercera fila
+    recuadro(8, 12, 14, 16);
+    gotoxy(10, 15); cout << "1";
+
+    recuadro(14, 18, 14, 16);
+    gotoxy(16, 15); cout << "2";
+
+    recuadro(20, 24, 14, 16);
+    gotoxy(22, 15); cout << "3";
+
+    recuadro(26, 30, 14, 16);
+    gotoxy(28, 15); cout << "-";
+
+    // Cuarta fila
+    recuadro(8, 12, 17, 19);
+    gotoxy(10, 18); cout << "C";
+
+    recuadro(14, 18, 17, 19);
+    gotoxy(16, 18); cout << "0";
+
+    recuadro(20, 24, 17, 19);
+    gotoxy(22, 18); cout << "=";
+
+    recuadro(26, 30, 17, 19);
+    gotoxy(28, 18); cout << "+";
+
+    gotoxy(7, 21);
+    cout << "P = Potencia";
+
+    gotoxy(7, 23);
+    cout << "ESC = Salir";
+}
+
+// Funcion para actualizar la pantalla
+void actualizarPantalla(string texto)
+{
+    gotoxy(9, 5);
+    cout << "                     ";
+
+    gotoxy(9, 5);
+    cout << texto;
+}
+
+// NUEVA FUNCION PARA GUARDAR EL HISTORIAL
+void guardarHistoria(double a, char operador, double b, double resultado)
+{
+    ofstream archivo("historia.txt", ios::app);
+
+    if(archivo.is_open())
+    {
+        archivo << setprecision(10)
+                << a << " "
+                << operador << " "
+                << b << " = "
+                << resultado << endl;
+
+        archivo.close();
+    }
+}
+
+int main()
+{
+    string num1 = "";
+    string num2 = "";
+    string pantalla = "";
+
+    char operador = 0;
+    char tecla;
+
+    double resultado = 0;
+    bool mostrarResultado = false;
+
+    system("cls");
+
+    caratula();
+    actualizarPantalla("0");
+
+    // Ciclo principal de la calculadora
+    while(true)
+    {
+        tecla = getch();
+
+        // Salir con ESC
+        if(tecla == 27)
+        {
+            break;
+        }
+
+        // Borrar con C
+        if(tecla == 'c' || tecla == 'C')
+        {
+            num1 = "";
+            num2 = "";
+            operador = 0;
+            pantalla = "0";
+            mostrarResultado = false;
+        }
+
+        // Escribir numeros
+        else if(tecla >= '0' && tecla <= '9')
+        {
+            if(mostrarResultado)
+            {
+                num1 = "";
+                num2 = "";
+                operador = 0;
+                mostrarResultado = false;
+            }
+
+            if(operador == 0)
+                num1 += tecla;
+            else
+                num2 += tecla;
+        }
+
+        // Punto decimal
+        else if(tecla == '.')
+        {
+            if(operador == 0 &&
+               num1.find('.') == string::npos)
+                num1 += tecla;
+
+            else if(operador != 0 &&
+                    num2.find('.') == string::npos)
+                num2 += tecla;
+        }
+
+        // Operaciones matematicas
+        else if(tecla == '+' || tecla == '-' ||
+                tecla == '*' || tecla == '/' ||
+                tecla == 'p' || tecla == 'P')
+        {
+            if(num1 != "" && operador == 0)
+            {
+                operador = tecla;
+                mostrarResultado = false;
+            }
+        }
+
+        // Calcular resultado
+        else if((tecla == '=' || tecla == 13) &&
+                operador != 0 && num2 != "")
+        {
+            double a = atof(num1.c_str());
+            double b = atof(num2.c_str());
+
+            if(operador == '+')
+                resultado = a + b;
+
+            else if(operador == '-')
+                resultado = a - b;
+
+            else if(operador == '*')
+                resultado = a * b;
+
+            else if(operador == '/')
+            {
+                if(b == 0)
+                {
+                    pantalla = "Error";
+                    actualizarPantalla(pantalla);
+                    num1 = "";
+                    num2 = "";
+                    operador = 0;
+                    mostrarResultado = true;
+                    continue;
+                }
+
+                resultado = a / b;
+            }
+
+            else if(operador == 'p' || operador == 'P')
+                resultado = pow(a, b);
+
+            // NUEVO: GUARDAR OPERACION EN EL HISTORIAL
+            guardarHistoria(a, operador, b, resultado);
+
+            // Convertir resultado a texto
+            stringstream salida;
+            salida << setprecision(10) << resultado;
+
+            pantalla = salida.str();
+
+            num1 = pantalla;
+            num2 = "";
+            operador = 0;
+
+            mostrarResultado = true;
+
+            actualizarPantalla(pantalla);
+            continue;
+        }
+
+        // Formar operacion en pantalla
+        if(!mostrarResultado)
+        {
+            pantalla = num1;
+
+            if(operador != 0)
+                pantalla += operador;
+
+            pantalla += num2;
+        }
+
+        if(pantalla == "")
+            pantalla = "0";
+
+        actualizarPantalla(pantalla);
+    }
+
+    system("cls");
+
+    gotoxy(10, 5);
+    cout << "Gracias por utilizar la calculadora";
+
+    gotoxy(0, 7);
+
+    return 0;
+}
